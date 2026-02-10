@@ -60,6 +60,9 @@ fi
 
 # Конфиг Tmux
 cat > ~/.tmux.conf <<EOF
+unbind C-b
+set -g prefix C-a
+
 set -g mouse on
 set -g history-limit 50000
 set -g default-terminal "screen-256color"
