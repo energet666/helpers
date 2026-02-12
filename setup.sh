@@ -378,7 +378,7 @@ log_info "Установка Treesitter парсеров..."
 TS_LANGS=("bash" "lua" "json" "yaml" "go" "javascript" "typescript" "html" "css" "python")
 for lang in "${TS_LANGS[@]}"; do
     log_info "Treesitter: компиляция $lang..."
-    timeout 120 /usr/local/bin/nvim --headless -c "TSInstall $lang" -c "sleep 30" -c "qall" 2>/dev/null || {
+    timeout 180 /usr/local/bin/nvim --headless -c "TSInstallSync $lang" -c "qall" 2>/dev/null || {
         log_warn "Treesitter: не удалось установить парсер $lang"
     }
 done
