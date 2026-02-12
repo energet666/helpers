@@ -14,6 +14,7 @@ log_info() { echo -e "${BLUE}=== $1 ===${NC}"; }
 log_step() { echo -e "${GREEN}>>> $1${NC}"; }
 log_warn() { echo -e "${YELLOW}[WARN] $1${NC}"; }
 log_error() { echo -e "${RED}[ERROR] $1${NC}"; }
+log_success() { echo -e "${GREEN}[SUCCESS] $1${NC}"; }
 
 # Функция для идемпотентного добавления строк в файлы
 append_if_missing() {
