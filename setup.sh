@@ -93,6 +93,19 @@ sudo apt install -y \
     software-properties-common \
     ripgrep fd-find bat
 
+# Создаём swap если его нет (нужен для компиляции treesitter парсеров на слабых VPS)
+if [ ! -f /swapfile ]; then
+    log_info "Создание swap (2GB)..."
+    sudo fallocate -l 2G /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    append_if_missing /etc/fstab '/swapfile none swap sw 0 0'
+    log_success "Swap 2GB создан и активирован."
+else
+    log_warn "Swap уже существует: $(swapon --show --noheadings 2>/dev/null | head -1)"
+fi
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 2. УСТАНОВКА MODERN TOOLS
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -299,7 +312,7 @@ cat > ~/.config/nvim/init.vim <<'EOF'
 call plug#begin()
 Plug 'nvim-lua/plenary.nvim'
 Plug 'nvim-telescope/telescope.nvim'
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+Plug 'nvim-treesitter/nvim-treesitter'
 Plug 'itchyny/lightline.vim'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'dracula/vim', { 'as': 'dracula' }
@@ -359,6 +372,16 @@ timeout 120 /usr/local/bin/nvim --headless +PlugInstall +qall 2>/dev/null || {
     log_warn "PlugInstall не завершился за 120 секунд или завершился с ошибкой."
     log_warn "Запустите nvim и выполните :PlugInstall вручную."
 }
+
+# Установка treesitter парсеров (по одному, чтобы не зависнуть на слабом VPS)
+log_info "Установка Treesitter парсеров..."
+TS_LANGS=("bash" "lua" "json" "yaml" "go" "javascript" "typescript" "html" "css" "python")
+for lang in "${TS_LANGS[@]}"; do
+    log_info "Treesitter: компиляция $lang..."
+    timeout 120 /usr/local/bin/nvim --headless -c "TSInstall $lang" -c "sleep 30" -c "qall" 2>/dev/null || {
+        log_warn "Treesitter: не удалось установить парсер $lang"
+    }
+done
 
 
 
