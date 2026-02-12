@@ -214,7 +214,11 @@ set smartcase
 syntax on
 
 " --- Цветовая схема ---
-colorscheme dracula
+try
+    colorscheme dracula
+catch
+    colorscheme default
+endtry
 
 " --- ГОРЯЧИЕ КЛАВИШИ ---
 let mapleader = " " " Пробел - главная клавиша
