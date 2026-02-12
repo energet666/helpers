@@ -267,7 +267,13 @@ if [ -s ~/.ssh/authorized_keys ]; then
     sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
     
     # Создаем директорию для privilege separation, если её нет (частая ошибка в контейнерах/VPS)
-    sudo mkdir -p /run/sshd
+    if [ ! -d "/run/sshd" ]; then
+        log_warn "Директория /run/sshd отсутствует. Создаем..."
+        sudo mkdir -p /run/sshd
+        sudo chmod 0755 /run/sshd
+    else
+        log_info "Директория /run/sshd уже существует."
+    fi
 
     # Проверка конфигурации перед рестартом
     if sudo sshd -t; then
