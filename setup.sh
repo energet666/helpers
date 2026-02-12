@@ -219,7 +219,29 @@ if [ -x "$HOME/.tmux/plugins/tpm/bin/install_plugins" ]; then
 fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 5. УСТАНОВКА NEOVIM (из официального бинарника)
+# 5. УСТАНОВКА NODE.JS (через NodeSource)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+next_step "Установка Node.js LTS"
+
+if command -v node &> /dev/null; then
+    log_warn "Node.js уже установлен: $(node --version). Пропускаем."
+else
+    # Установка через NodeSource (LTS)
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    sudo apt install -y nodejs
+    log_success "Node.js установлен: $(node --version), npm: $(npm --version)"
+fi
+
+# tree-sitter-cli — нужен для Neovim Treesitter
+if command -v tree-sitter &> /dev/null; then
+    log_warn "tree-sitter-cli уже установлен."
+else
+    npm install -g tree-sitter-cli
+    log_success "tree-sitter-cli установлен."
+fi
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 6. УСТАНОВКА NEOVIM (из официального бинарника)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 next_step "Установка Neovim"
 
@@ -338,19 +360,7 @@ timeout 120 /usr/local/bin/nvim --headless +PlugInstall +qall 2>/dev/null || {
     log_warn "Запустите nvim и выполните :PlugInstall вручную."
 }
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 6. УСТАНОВКА NODE.JS (через NodeSource)
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-next_step "Установка Node.js LTS"
 
-if command -v node &> /dev/null; then
-    log_warn "Node.js уже установлен: $(node --version). Пропускаем."
-else
-    # Установка через NodeSource (LTS)
-    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-    sudo apt install -y nodejs
-    log_success "Node.js установлен: $(node --version), npm: $(npm --version)"
-fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 7. БЕЗОПАСНОСТЬ
