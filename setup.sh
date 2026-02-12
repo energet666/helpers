@@ -265,6 +265,9 @@ if [ -s ~/.ssh/authorized_keys ]; then
     sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
     sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
     
+    # Создаем директорию для privilege separation, если её нет (частая ошибка в контейнерах/VPS)
+    sudo mkdir -p /run/sshd
+
     # Проверка конфигурации перед рестартом
     if sudo sshd -t; then
         sudo systemctl restart ssh
