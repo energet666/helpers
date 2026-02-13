@@ -93,19 +93,6 @@ sudo apt install -y \
     software-properties-common \
     ripgrep fd-find bat
 
-# Создаём swap если его нет (нужен для компиляции treesitter парсеров на слабых VPS)
-if [ ! -f /swapfile ]; then
-    log_info "Создание swap (2GB)..."
-    sudo fallocate -l 2G /swapfile
-    sudo chmod 600 /swapfile
-    sudo mkswap /swapfile
-    sudo swapon /swapfile
-    append_if_missing /etc/fstab '/swapfile none swap sw 0 0'
-    log_success "Swap 2GB создан и активирован."
-else
-    log_warn "Swap уже существует: $(swapon --show --noheadings 2>/dev/null | head -1)"
-fi
-
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 2. УСТАНОВКА MODERN TOOLS
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -245,13 +232,7 @@ else
     log_success "Node.js установлен: $(node --version), npm: $(npm --version)"
 fi
 
-# tree-sitter-cli — нужен для Neovim Treesitter
-if command -v tree-sitter &> /dev/null; then
-    log_warn "tree-sitter-cli уже установлен."
-else
-    npm install -g tree-sitter-cli
-    log_success "tree-sitter-cli установлен."
-fi
+
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 6. УСТАНОВКА NEOVIM (из официального бинарника)
@@ -298,90 +279,28 @@ if [[ -n "$NVIM_URL" ]]; then
     fi
 fi
 
-# Установка vim-plug
-PLUG_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/site/autoload/plug.vim"
-if [ ! -f "$PLUG_FILE" ]; then
-    curl -fLo "$PLUG_FILE" --create-dirs \
-        https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-fi
-
-# --- Конфигурация Neovim ---
-mkdir -p ~/.config/nvim
-
-cat > ~/.config/nvim/init.vim <<'EOF'
-call plug#begin()
-Plug 'nvim-lua/plenary.nvim'
-Plug 'nvim-telescope/telescope.nvim'
-Plug 'nvim-treesitter/nvim-treesitter'
-Plug 'itchyny/lightline.vim'
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-Plug 'dracula/vim', { 'as': 'dracula' }
-call plug#end()
-
-" --- Базовые настройки ---
-set number
-set relativenumber
-set tabstop=4 shiftwidth=4 expandtab
-set clipboard+=unnamedplus
-set termguicolors
-set ignorecase
-set smartcase
-set scrolloff=8
-set signcolumn=yes
-set updatetime=250
-set undofile
-syntax on
-
-" --- Цветовая схема ---
-try
-    colorscheme dracula
-catch
-    colorscheme default
-endtry
-
-" --- ГОРЯЧИЕ КЛАВИШИ ---
-let mapleader = " "
-
-" Telescope (Поиск)
-nnoremap <leader>ff <cmd>Telescope find_files<cr>
-nnoremap <leader>fg <cmd>Telescope live_grep<cr>
-nnoremap <leader>fb <cmd>Telescope buffers<cr>
-nnoremap <leader>fh <cmd>Telescope help_tags<cr>
-
-" Навигация по окнам (Ctrl+h/j/k/l)
-nnoremap <C-h> <C-w>h
-nnoremap <C-j> <C-w>j
-nnoremap <C-k> <C-w>k
-nnoremap <C-l> <C-w>l
-
-" Выход из insert mode
-inoremap jk <Esc>
-
-" Быстрое сохранение
-nnoremap <leader>w :w<cr>
-
-" Treesitter (сворачивание кода)
-set foldmethod=expr
-set foldexpr=nvim_treesitter#foldexpr()
-set nofoldenable
-EOF
-
-# Установка плагинов Neovim (с таймаутом)
-log_info "Установка плагинов Neovim..."
-timeout 120 /usr/local/bin/nvim --headless +PlugInstall +qall 2>/dev/null || {
-    log_warn "PlugInstall не завершился за 120 секунд или завершился с ошибкой."
-    log_warn "Запустите nvim и выполните :PlugInstall вручную."
-}
-
-# Установка treesitter парсеров (по одному, чтобы не зависнуть на слабом VPS)
-log_info "Установка Treesitter парсеров..."
-TS_LANGS=("bash" "lua" "json" "yaml" "go" "javascript" "typescript" "html" "css" "python")
-for lang in "${TS_LANGS[@]}"; do
-    log_info "Treesitter: компиляция $lang..."
-    timeout 180 /usr/local/bin/nvim --headless -c "TSInstallSync $lang" -c "qall" 2>/dev/null || {
-        log_warn "Treesitter: не удалось установить парсер $lang"
-    }
+# --- Установка LazyVim ---
+# Бэкап существующей конфигурации (если есть)
+for dir in ~/.config/nvim ~/.local/share/nvim ~/.local/state/nvim ~/.cache/nvim; do
+    if [ -d "$dir" ]; then
+        backup="${dir}.bak.$(date +%Y%m%d_%H%M%S)"
+        mv "$dir" "$backup"
+        log_warn "Старая конфигурация перемещена: $backup"
+    fi
 done
+
+# Клонируем LazyVim starter
+git clone https://github.com/LazyVim/starter ~/.config/nvim
+# Удаляем .git чтобы можно было вести свой репозиторий
+rm -rf ~/.config/nvim/.git
+log_success "LazyVim starter установлен в ~/.config/nvim"
+
+# Первый запуск — lazy.nvim скачает и установит все плагины
+log_info "Первый запуск Neovim (установка плагинов LazyVim)..."
+timeout 180 nvim --headless '+Lazy! sync' +qa 2>/dev/null || {
+    log_warn "Установка плагинов не завершилась за 180 секунд."
+    log_warn "Запустите nvim вручную — плагины доустановятся автоматически."
+}
 
 
 
@@ -467,7 +386,7 @@ echo ""
 echo -e "${GREEN}Что установлено:${NC}"
 echo "  • Zsh + Oh-My-Zsh (autosuggestions, syntax-highlighting, z)"
 echo "  • Tmux + TPM (resurrect, continuum)"
-echo "  • Neovim (stable, vim-plug, Telescope, Treesitter, Dracula)"
+echo "  • Neovim (stable) + LazyVim (LSP, Treesitter, Telescope, и др.)"
 echo "  • FZF, Ripgrep, fd, bat"
 echo "  • Node.js LTS"
 echo "  • UFW + Fail2Ban + SSH hardening"
@@ -476,5 +395,5 @@ echo -e "${YELLOW}Следующие шаги:${NC}"
 echo "  1. Перезайдите на сервер, чтобы активировать Zsh"
 echo "  2. Проверьте фаервол: sudo ufw status"
 echo "  3. В tmux нажмите Prefix+I для установки плагинов"
-echo "  4. В nvim выполните :PlugInstall (если плагины не установились)"
+echo "  4. В nvim плагины доустановятся автоматически при первом запуске"
 echo ""
