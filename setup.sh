@@ -186,6 +186,9 @@ set -g renumber-windows on
 set -g escape-time 10
 set -g focus-events on
 
+# Статус-бар сверху (современный стиль)
+set -g status-position top
+
 # Быстрое переключение панелей через Alt+стрелки
 bind -n M-Left  select-pane -L
 bind -n M-Right select-pane -R
@@ -204,6 +207,25 @@ set -g @plugin 'tmux-plugins/tpm'
 set -g @plugin 'tmux-plugins/tmux-sensible'
 set -g @plugin 'tmux-plugins/tmux-resurrect'
 set -g @plugin 'tmux-plugins/tmux-continuum'
+set -g @plugin 'catppuccin/tmux'
+
+# Catppuccin — тема и статус-бар
+set -g @catppuccin_flavor 'mocha'
+set -g @catppuccin_window_status_style 'rounded'
+
+# Левая часть: иконка сессии
+set -g status-left "#{E:@catppuccin_status_session} "
+set -g status-left-length 50
+
+# Табы окон
+set -g @catppuccin_window_text " #W"
+set -g @catppuccin_window_current_text " #W"
+set -g @catppuccin_window_number_position "left"
+
+# Правая часть: хост + дата/время
+set -g status-right "#{E:@catppuccin_status_host}#{E:@catppuccin_status_date_time}"
+set -g status-right-length 80
+set -g @catppuccin_date_time_text " %d.%m %H:%M"
 
 # Авто-сохранение и восстановление
 set -g @continuum-restore 'on'
