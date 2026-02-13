@@ -186,7 +186,7 @@ set -g renumber-windows on
 set -g escape-time 10
 set -g focus-events on
 
-# Статус-бар сверху (современный стиль)
+# Статус-бар сверху
 set -g status-position top
 
 # Быстрое переключение панелей через Alt+стрелки
@@ -207,24 +207,14 @@ set -g @plugin 'tmux-plugins/tpm'
 set -g @plugin 'tmux-plugins/tmux-sensible'
 set -g @plugin 'tmux-plugins/tmux-resurrect'
 set -g @plugin 'tmux-plugins/tmux-continuum'
-set -g @plugin 'catppuccin/tmux'
+set -g @plugin 'catppuccin/tmux#v2.1.3'
 
-# Catppuccin — тема и статус-бар
+# Catppuccin — настройки (до загрузки TPM)
 set -g @catppuccin_flavor 'mocha'
 set -g @catppuccin_window_status_style 'rounded'
-
-# Левая часть: иконка сессии
-set -g status-left "#{E:@catppuccin_status_session} "
-set -g status-left-length 50
-
-# Табы окон
 set -g @catppuccin_window_text " #W"
 set -g @catppuccin_window_current_text " #W"
 set -g @catppuccin_window_number_position "left"
-
-# Правая часть: хост + дата/время
-set -g status-right "#{E:@catppuccin_status_host}#{E:@catppuccin_status_date_time}"
-set -g status-right-length 80
 set -g @catppuccin_date_time_text " %d.%m %H:%M"
 
 # Авто-сохранение и восстановление
@@ -232,7 +222,15 @@ set -g @continuum-restore 'on'
 set -g @continuum-save-interval '15'
 set -g @resurrect-strategy-nvim 'session'
 
+# Загрузка TPM и плагинов (catppuccin определит свои переменные)
 run '~/.tmux/plugins/tpm/tpm'
+
+# Статус-бар (ПОСЛЕ загрузки catppuccin, чтобы переменные были доступны)
+set -g status-left-length 100
+set -g status-right-length 100
+set -g status-left "#{E:@catppuccin_status_session} "
+set -g status-right "#{E:@catppuccin_status_host}"
+set -ag status-right "#{E:@catppuccin_status_date_time}"
 EOF
 
 # Инсталляция плагинов Tmux (headless)
