@@ -170,6 +170,18 @@ sudo apt install -y tmux
 # Установка TPM
 clone_or_pull "https://github.com/tmux-plugins/tpm" "$HOME/.tmux/plugins/tpm"
 
+# Установка Catppuccin вручную (рекомендуется, TPM имеет проблемы с именами)
+CATPPUCCIN_DIR="$HOME/.config/tmux/plugins/catppuccin/tmux"
+if [ ! -d "$CATPPUCCIN_DIR" ]; then
+    mkdir -p "$(dirname "$CATPPUCCIN_DIR")"
+    git clone -b v2.1.3 https://github.com/catppuccin/tmux.git "$CATPPUCCIN_DIR"
+else
+    log_warn "Catppuccin tmux уже установлен."
+fi
+
+# Удаляем старую TPM-версию catppuccin (если была)
+rm -rf "$HOME/.tmux/plugins/tmux"
+
 # Конфиг Tmux
 cat > ~/.tmux.conf <<'EOF'
 unbind C-b
@@ -202,14 +214,13 @@ bind - split-window -v -c "#{pane_current_path}"
 # Reload конфига
 bind r source-file ~/.tmux.conf \; display "Config reloaded!"
 
-# Плагины
+# Плагины (TPM — без catppuccin)
 set -g @plugin 'tmux-plugins/tpm'
 set -g @plugin 'tmux-plugins/tmux-sensible'
 set -g @plugin 'tmux-plugins/tmux-resurrect'
 set -g @plugin 'tmux-plugins/tmux-continuum'
-set -g @plugin 'catppuccin/tmux#v2.1.3'
 
-# Catppuccin — настройки (до загрузки TPM)
+# Catppuccin — настройки
 set -g @catppuccin_flavor 'mocha'
 set -g @catppuccin_window_status_style 'rounded'
 set -g @catppuccin_window_text " #W"
@@ -217,20 +228,23 @@ set -g @catppuccin_window_current_text " #W"
 set -g @catppuccin_window_number_position "left"
 set -g @catppuccin_date_time_text " %d.%m %H:%M"
 
-# Авто-сохранение и восстановление
-set -g @continuum-restore 'on'
-set -g @continuum-save-interval '15'
-set -g @resurrect-strategy-nvim 'session'
+# Загрузка Catppuccin (ручная установка — до настройки статус-бара)
+run ~/.config/tmux/plugins/catppuccin/tmux/catppuccin.tmux
 
-# Загрузка TPM и плагинов (catppuccin определит свои переменные)
-run '~/.tmux/plugins/tpm/tpm'
-
-# Статус-бар (ПОСЛЕ загрузки catppuccin, чтобы переменные были доступны)
+# Статус-бар (после загрузки catppuccin)
 set -g status-left-length 100
 set -g status-right-length 100
 set -g status-left "#{E:@catppuccin_status_session} "
 set -g status-right "#{E:@catppuccin_status_host}"
 set -ag status-right "#{E:@catppuccin_status_date_time}"
+
+# Авто-сохранение и восстановление
+set -g @continuum-restore 'on'
+set -g @continuum-save-interval '15'
+set -g @resurrect-strategy-nvim 'session'
+
+# Загрузка TPM (для остальных плагинов)
+run '~/.tmux/plugins/tpm/tpm'
 EOF
 
 # Инсталляция плагинов Tmux (headless)
